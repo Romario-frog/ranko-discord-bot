@@ -102,6 +102,20 @@ def normalize_config_from_form(form) -> dict:
     config["commander_role_ids"] = _multi_select_ids(form, "commander_role_ids")
     config["level_admin_role_ids"] = _multi_select_ids(form, "level_admin_role_ids")
     config["role_rewards"] = parse_role_rewards(form)
+    # AI
+    config["ai_model"] = form.get("ai_model", "qwen2.5:7b").strip() or "qwen2.5:7b"
+    config["ai_enabled"] = "ai_enabled" in form
+    guild_id = form.get("guild_id", "").strip()
+    persona = form.get("ai_persona", "").strip()
+    if guild_id and persona:
+        config[f"ai_persona_{guild_id}"] = persona
+    # TTS / Voice
+    config["tts_voice"] = form.get("tts_voice", "ru-RU-DmitryNeural").strip() or "ru-RU-DmitryNeural"
+    try:
+        config["tts_volume"] = max(0.1, min(10.0, float(form.get("tts_volume", 3.0))))
+    except (ValueError, TypeError):
+        config["tts_volume"] = 3.0
+    config["listen_enabled"] = "listen_enabled" in form
     return config
 
 
@@ -477,6 +491,11 @@ def api_update_config():
         "commander_role_ids",
         "level_admin_role_ids",
         "role_rewards",
+        "ai_model",
+        "ai_enabled",
+        "listen_enabled",
+        "tts_voice",
+        "tts_volume",
     }
 
     for key, value in data.items():
@@ -499,6 +518,51 @@ def api_levels():
 @api_required
 def api_stats():
     return jsonify({"ok": True, "stats": get_stats()})
+
+
+@app.route("/api/levels/reset", methods=["POST"])
+@api_required
+def api_reset_level():
+    data = request.get_json(silent=True) or {}
+    guild_id = str(data.get("guild_id", "")).strip()
+    user_id = str(data.get("user_id", "")).strip()
+    if not guild_id or not user_id:
+        return jsonify({"ok": False, "error": "guild_id and user_id required"}), 400
+    set_user_level(guild_id, user_id, data.get("username", "User"), 0)
+    set_user_xp(guild_id, user_id, data.get("username", "User"), 0)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/ai-config", methods=["GET"])
+@api_required
+def api_ai_config():
+    config = load_config()
+    return jsonify({
+        "ok": True,
+        "ai_model": config.get("ai_model", "qwen2.5:7b"),
+        "ai_enabled": config.get("ai_enabled", True),
+        "listen_enabled": config.get("listen_enabled", True),
+        "tts_voice": config.get("tts_voice", "ru-RU-DmitryNeural"),
+        "tts_volume": config.get("tts_volume", 3.0),
+    })
+
+
+@app.route("/ai-settings")
+@login_required
+def ai_settings_page():
+    config = load_config()
+    guild_id = str(config.get("guild_id", ""))
+    persona_key = f"ai_persona_{guild_id}" if guild_id else None
+    persona = config.get(persona_key, "Ты — полезный голосовой ассистент Ranko.") if persona_key else ""
+    return render_template("ai_settings.html", config=config, persona=persona, stats=get_stats())
+
+
+@app.route("/ai-settings", methods=["POST"])
+@login_required
+def ai_settings_save():
+    config = normalize_config_from_form(request.form)
+    save_config(config)
+    return redirect("/ai-settings?saved=1")
 
 
 if __name__ == "__main__":

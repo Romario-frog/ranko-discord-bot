@@ -560,3 +560,19 @@ th{color:#8d96b3;font-size:13px;text-transform:uppercase}
   .panel-grid{display:block}
   .reward-row{grid-template-columns:1fr}
 }
+
+/* AI btn in topbar */
+.ai-btn{background:#1e2d4a;color:#55d6ff;margin-left:4px}
+/* AI settings page */
+.voice-grid{display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:14px;margin:14px 0}
+.voice-option{padding:14px;border:2px solid #303748;border-radius:10px;background:#202636;cursor:pointer;text-align:center;transition:.15s}
+.voice-option:hover{border-color:#3b82f6}
+.voice-option.selected{border-color:#3b82f6;background:#192641}
+.voice-option b{display:block;margin-bottom:4px}
+.voice-option small{color:#8d96b3}
+.ai-model-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ai-model-row input{flex:1;min-width:200px;margin:0}
+.tag{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:900;background:#1e2d1e;color:#39c980;border:1px solid #2a4a2a}
+.tag.blue{background:#1a2a44;color:#55d6ff;border-color:#1e3558}
+.tag.purple{background:#2a1e44;color:#a78bfa;border-color:#3a2a5a}
+.persona-counter{text-align:right;color:#747d99;font-size:12px;margin-top:4px}

@@ -26,19 +26,21 @@
     <nav>
       <p>ПАНЕЛЬ</p>
       <a class="nav-link {% if active=='dashboard' %}active{% endif %}" href="/dashboard"><span>⊞</span> Панель управления</a>
-      <a class="nav-link {% if active=='levels' %}active{% endif %}" href="/levels"><span>🏆</span> Таблица лидеров</a>
+      <a class="nav-link {% if active=='levels' %}active{% endif %}" href="/levels"><span>🏆</span> Таблица уровней</a>
       <a class="nav-link {% if active=='commands' %}active{% endif %}" href="/commands"><span>⌘</span> Команды</a>
+      <a class="nav-link {% if active=='ai' %}active{% endif %}" href="/ai-settings"><span>🤖</span> AI и голос</a>
       <a class="nav-link {% if active=='api' %}active{% endif %}" href="/api-docs"><span>🔌</span> API</a>
 
-      <p>ОСНОВНЫЕ</p>
+      <p>РАЗДЕЛЫ</p>
       <a class="nav-link" href="/dashboard#welcome"><span>👋</span> Приветствие</a>
       <a class="nav-link" href="/dashboard#levels-module"><span>🏅</span> Уровни</a>
       <a class="nav-link" href="/dashboard#music-module"><span>🎵</span> Музыка</a>
-      <a class="nav-link" href="/dashboard#access"><span>🛡️</span> Модератор</a>
+      <a class="nav-link" href="/dashboard#access"><span>🛡️</span> Модерация</a>
       <a class="nav-link" href="/dashboard#rewards"><span>🎁</span> Роли за уровни</a>
+      <a class="nav-link" href="/ai-settings#tts-section"><span>🗣️</span> TTS / Голос</a>
 
-      <p>USER</p>
-      <a class="nav-link {% if active=='user' %}active{% endif %}" href="/user"><span>🌐</span> Страница юзеров</a>
+      <p>ПРОЧЕЕ</p>
+      <a class="nav-link {% if active=='user' %}active{% endif %}" href="/user"><span>🌐</span> User-страница</a>
       <a class="nav-link logout" href="/logout"><span>🚪</span> Выйти</a>
     </nav>
   </aside>
@@ -51,6 +53,7 @@
       </div>
       <div class="topbar-actions">
         <a class="premium-btn" href="/commands">👑 Команды</a>
+        <a class="premium-btn ai-btn" href="/ai-settings">🤖 AI</a>
         <span class="bell">🔔</span>
         <span class="user-chip">{% if session.get("discord_user") %}{{ session.discord_user.username[:1]|upper }}{% else %}R{% endif %}</span>
       </div>

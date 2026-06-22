@@ -73,4 +73,22 @@
   <div class="command-row big"><code>{{ config.prefix }}sayvc Привет всем</code><span>Если Ranko уже в другом голосовом — он скажет текст там, а не вернётся к тебе</span></div>
 </section>
 
+<section class="card">
+  <h2>🤖 AI-ассистент</h2>
+  <div class="command-row big"><code>{{ config.prefix }}ai &lt;текст&gt;</code><span>Спросить AI. Отвечает в чате и голосом, если ты в войсе</span></div>
+  <div class="command-row big"><code>/ai &lt;текст&gt;</code><span>Slash-версия</span></div>
+  <div class="command-row big"><code>{{ config.prefix }}persona [текст]</code><span>Посмотреть или задать системный промпт сервера (только Admin)</span></div>
+  <div class="command-row big"><code>/persona [текст]</code><span>Slash-версия</span></div>
+  <div class="command-row big"><code>{{ config.prefix }}forget</code><span>Очистить личную память AI</span></div>
+  <div class="command-row big"><code>/forget</code><span>Slash-версия</span></div>
+  <div class="command-row big"><code>{{ config.prefix }}aimodel [название]</code><span>Сменить активную Ollama-модель глобально (только Admin)</span></div>
+</section>
+
+<section class="card">
+  <h2>🎙️ Голосовой ввод (Whisper)</h2>
+  <div class="command-row big"><code>{{ config.prefix }}listen [сек]</code><span>Ranko записывает тебя в войсе N секунд (1–30), распознаёт речь через Whisper и отвечает через AI + TTS</span></div>
+  <div class="command-row big"><code>/listen [сек]</code><span>Slash-версия</span></div>
+  <div class="command-row"><code>{{ config.prefix }}слушай [сек]</code><span>Алиас — то же самое на русском</span></div>
+</section>
+
 {% endblock %}

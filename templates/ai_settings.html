@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% set active = 'ai' %}
+{% set title = 'Ranko — AI и голос' %}
+{% block content %}
+<header class="hero compact">
+  <div>
+    <div class="eyebrow">AI & VOICE</div>
+    <h1>AI-ассистент и голос</h1>
+    <p>Настрой локальный LLM Ollama, системный промпт сервера и голосовые функции — TTS и распознавание речи через Whisper.</p>
+  </div>
+  <div class="hero-art">
+    <div class="moon-card">🤖</div>
+    <div class="hero-bubble one">AI</div>
+    <div class="hero-bubble two">🎙️</div>
+  </div>
+</header>
+
+{% if request.args.get('saved') %}<div class="alert success">✅ AI-настройки сохранены.</div>{% endif %}
+
+<section class="stats-grid small">
+  <div class="stat-card"><span>Модель</span><strong style="font-size:18px">{{ config.ai_model or 'qwen2.5:7b' }}</strong><p>Текущая Ollama-модель</p></div>
+  <div class="stat-card"><span>TTS голос</span><strong style="font-size:14px;margin-top:10px">{{ config.tts_voice or 'ru-RU-DmitryNeural' }}</strong><p>Edge TTS</p></div>
+  <div class="stat-card"><span>Громкость TTS</span><strong>{{ config.tts_volume or '3.0' }}×</strong><p>Множитель громкости</p></div>
+</section>
+
+<form method="post" action="/ai-settings" id="aiSettingsForm" class="panel-grid">
+
+  {# Hidden fields to carry over non-AI config #}
+  <input type="hidden" name="bot_name" value="{{ config.bot_name }}">
+  <input type="hidden" name="prefix" value="{{ config.prefix }}">
+  <input type="hidden" name="guild_id" value="{{ config.guild_id }}">
+  <input type="hidden" name="welcome_channel" value="{{ config.welcome_channel }}">
+  <input type="hidden" name="welcome_text" value="{{ config.welcome_text }}">
+  <input type="hidden" name="welcome_role_id" value="{{ config.welcome_role_id }}">
+  <input type="hidden" name="log_channel" value="{{ config.log_channel }}">
+  <input type="hidden" name="xp_per_message" value="{{ config.xp_per_message }}">
+  <input type="hidden" name="level_multiplier" value="{{ config.level_multiplier }}">
+  {% if config.welcome_enabled %}<input type="hidden" name="welcome_enabled" value="on">{% endif %}
+  {% if config.levels_enabled %}<input type="hidden" name="levels_enabled" value="on">{% endif %}
+  {% if config.moderation_enabled %}<input type="hidden" name="moderation_enabled" value="on">{% endif %}
+
+  <!-- AI Model -->
+  <section class="card">
+    <div class="card-head">
+      <div>
+        <h2>🤖 Ollama AI</h2>
+        <p class="muted">Модель и системный промпт для этого сервера.</p>
+      </div>
+      <span class="tag {% if config.ai_enabled %}{% else %}tag purple{% endif %}">{% if config.ai_enabled %}✓ Активен{% else %}Выключен{% endif %}</span>
+    </div>
+
+    <label class="toggle">
+      <div><b>AI включён</b><span>Отвечает на ;;ai и /ai, реагирует в войсе</span></div>
+      <input type="checkbox" name="ai_enabled" {% if config.ai_enabled %}checked{% endif %}>
+    </label>
+
+    <label style="margin-top:18px">Ollama модель
+      <div class="ai-model-row">
+        <input name="ai_model" id="aiModelInput" value="{{ config.ai_model or 'qwen2.5:7b' }}" placeholder="qwen2.5:7b">
+      </div>
+      <small>Модель должна быть предварительно скачана: <code>ollama pull &lt;model&gt;</code></small>
+    </label>
+
+    <div style="margin:14px 0 6px"><b style="color:#d8def1">Быстрый выбор</b></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      {% for m in ['qwen2.5:7b','qwen2.5:14b','llama3.2:3b','llama3.1:8b','mistral:7b','gemma3:4b','phi4:14b'] %}
+      <button type="button" class="preset-btn model-preset" data-model="{{ m }}">{{ m }}</button>
+      {% endfor %}
+    </div>
+
+    <label style="margin-top:20px">Системный промпт сервера (persona)
+      <textarea name="ai_persona" id="personaTextarea" placeholder="Ты — полезный голосовой ассистент Ranko. Отвечай кратко и по делу." rows="5">{{ persona }}</textarea>
+      <div class="persona-counter"><span id="personaCount">{{ persona|length }}</span> символов</div>
+      <small>Этот промпт задаёт личность и поведение Ranko для всего сервера. Пользователи могут посмотреть его через <code>;;persona</code>.</small>
+    </label>
+
+    <div class="discord-preview" style="margin-top:16px">
+      <div class="preview-avatar">R</div>
+      <div>
+        <b>Ranko</b> <span style="color:#8d96b3;font-size:12px">сегодня в 21:00</span>
+        <p id="personaPreview" style="margin:4px 0 0">{{ persona[:120] if persona else 'Системный промпт сервера появится здесь...' }}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TTS & Voice -->
+  <section class="card" id="tts-section">
+    <div class="card-head">
+      <div>
+        <h2>🗣️ TTS и голос</h2>
+        <p class="muted">Edge TTS для озвучки, Whisper для распознавания речи.</p>
+      </div>
+      <span class="tag blue">Без лимита символов</span>
+    </div>
+
+    <label class="toggle">
+      <div><b>Голосовой ввод (;;listen)</b><span>Ranko записывает войс и отвечает через Whisper + AI + TTS</span></div>
+      <input type="checkbox" name="listen_enabled" {% if config.listen_enabled %}checked{% endif %}>
+    </label>
+
+    <label style="margin-top:18px">TTS голос
+      <input name="tts_voice" id="ttsVoiceInput" value="{{ config.tts_voice or 'ru-RU-DmitryNeural' }}" placeholder="ru-RU-DmitryNeural">
+      <small>Полный список голосов: <a href="https://aka.ms/edge-tts-voices" target="_blank" style="color:#55d6ff">aka.ms/edge-tts-voices</a></small>
+    </label>
+
+    <div style="margin:14px 0 6px"><b style="color:#d8def1">Популярные голоса</b></div>
+    <div class="voice-grid">
+      {% set voices = [
+        ('ru-RU-DmitryNeural', 'Дмитрий', 'RU · Мужской'),
+        ('ru-RU-SvetlanaNeural', 'Светлана', 'RU · Женский'),
+        ('en-US-GuyNeural', 'Guy', 'EN · Мужской'),
+        ('en-US-JennyNeural', 'Jenny', 'EN · Женский'),
+        ('en-GB-RyanNeural', 'Ryan', 'EN-GB · Мужской'),
+        ('uk-UA-OstapNeural', 'Остап', 'UA · Мужской'),
+      ] %}
+      {% for val, name, desc in voices %}
+      <div class="voice-option {% if (config.tts_voice or 'ru-RU-DmitryNeural') == val %}selected{% endif %}"
+           data-voice="{{ val }}" onclick="pickVoice('{{ val }}', this)">
+        <b>{{ name }}</b>
+        <small>{{ desc }}</small>
+      </div>
+      {% endfor %}
+    </div>
+
+    <label style="margin-top:6px">Громкость TTS
+      <input type="number" name="tts_volume" min="0.1" max="10" step="0.1" value="{{ config.tts_volume or 3.0 }}">
+      <small>По умолчанию 3.0. Увеличь если Ranko тихий, уменьши если слишком громкий.</small>
+    </label>
+  </section>
+
+  <!-- Commands reference -->
+  <section class="card wide">
+    <h2>⌨️ Команды AI и голоса</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 32px">
+      <div>
+        <h3>AI</h3>
+        <div class="command-row"><code>;;ai &lt;текст&gt;</code><span>Спросить AI, ответит текстом и голосом если в войсе</span></div>
+        <div class="command-row"><code>/ai &lt;текст&gt;</code><span>Slash-версия</span></div>
+        <div class="command-row"><code>;;persona [текст]</code><span>Посмотреть или задать системный промпт</span></div>
+        <div class="command-row"><code>;;forget</code><span>Очистить личную память AI</span></div>
+        <div class="command-row"><code>;;aimodel [название]</code><span>Сменить Ollama модель глобально</span></div>
+      </div>
+      <div>
+        <h3>Голос и TTS</h3>
+        <div class="command-row"><code>;;listen [сек]</code><span>Записать войс и ответить через AI + TTS (до 30 сек)</span></div>
+        <div class="command-row"><code>/listen [сек]</code><span>Slash-версия</span></div>
+        <div class="command-row"><code>;;sayvc &lt;текст&gt;</code><span>Озвучить текст в голосовом канале</span></div>
+        <div class="command-row"><code>/sayvc &lt;текст&gt;</code><span>Slash-версия</span></div>
+        <div class="command-row"><code>;;tts / ;;speak</code><span>Альтернативные алиасы для sayvc</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Whisper info -->
+  <section class="card">
+    <h2>🎙️ Whisper — распознавание речи</h2>
+    <p class="muted">Ranko использует <b>faster-whisper</b> — локальную офлайн-модель распознавания речи от OpenAI. Работает на CPU без интернета.</p>
+    <div class="stats-grid small" style="margin:16px 0">
+      <div class="stat-card"><span>Модель</span><strong style="font-size:20px">small</strong><p>~500 МБ, хороший баланс</p></div>
+      <div class="stat-card"><span>Языки</span><strong style="font-size:20px">99+</strong><p>Автоопределение</p></div>
+      <div class="stat-card"><span>Интернет</span><strong style="font-size:20px">❌</strong><p>Только локально</p></div>
+    </div>
+    <div class="alert warning">⚠️ При первом вызове <code>;;listen</code> Whisper скачает модель (~500 МБ). Последующие вызовы будут быстрее.</div>
+    <div style="margin-top:12px">
+      <b style="color:#d8def1">Доступные модели (менять в bot.py):</b>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        {% for m, desc in [('tiny','39 МБ · быстро'),('base','74 МБ · баланс'),('small','244 МБ · хорошо'),('medium','769 МБ · точно'),('large-v3','1.5 ГБ · максимум')] %}
+        <div style="padding:8px 12px;background:#202636;border:1px solid #303748;border-radius:8px;font-size:13px">
+          <b>{{ m }}</b><br><small style="color:#8d96b3">{{ desc }}</small>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Save -->
+  <section class="card save-card">
+    <h2>Сохранить</h2>
+    <p class="muted">Сохрани AI-настройки. Большинство параметров применяется без перезапуска бота.</p>
+    <button class="primary-btn full-btn" type="submit">Сохранить настройки</button>
+    <div class="autosave-status" id="autosaveStatus">Автосохранение включено</div>
+  </section>
+
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='autosave.js') }}"></script>
+<script>
+// Model preset buttons
+document.querySelectorAll('.model-preset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('aiModelInput').value = btn.dataset.model;
+  });
+});
+
+// Persona counter + preview
+const ta = document.getElementById('personaTextarea');
+const counter = document.getElementById('personaCount');
+const preview = document.getElementById('personaPreview');
+if (ta) {
+  ta.addEventListener('input', () => {
+    counter.textContent = ta.value.length;
+    preview.textContent = ta.value.slice(0, 120) || 'Системный промпт сервера появится здесь...';
+  });
+}
+
+// Voice picker
+function pickVoice(val, el) {
+  document.querySelectorAll('.voice-option').forEach(v => v.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('ttsVoiceInput').value = val;
+}
+</script>
+{% endblock %}

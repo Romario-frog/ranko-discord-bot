@@ -108,6 +108,22 @@
       <p>Топ пользователей, XP, сообщения и ручное управление уровнем через сайт.</p>
       <a class="module-btn" href="/levels">Открыть</a>
     </article>
+
+    <article class="plugin-card">
+      <div class="plugin-icon">🤖</div>
+      <span class="plugin-badge {% if config.ai_enabled %}active{% endif %}">{% if config.ai_enabled %}Активен{% else %}Выключен{% endif %}</span>
+      <h3>AI-ассистент</h3>
+      <p>Локальный LLM через Ollama. Память на пользователя, кастомная persona сервера, ответы голосом.</p>
+      <a class="module-btn" href="/ai-settings">{% if config.ai_enabled %}✓ Настроить{% else %}+ Включить{% endif %}</a>
+    </article>
+
+    <article class="plugin-card">
+      <div class="plugin-icon">🎙️</div>
+      <span class="plugin-badge {% if config.listen_enabled %}active{% endif %}">{% if config.listen_enabled %}Активен{% else %}Выключен{% endif %}</span>
+      <h3>Голосовой ввод</h3>
+      <p>Ranko записывает тебя в войсе, распознаёт речь через Whisper и отвечает голосом через TTS.</p>
+      <a class="module-btn" href="/ai-settings#tts-section">{% if config.listen_enabled %}✓ Настроить{% else %}+ Включить{% endif %}</a>
+    </article>
   </div>
 </section>
 
@@ -116,6 +132,8 @@
   <div class="stat-card"><span>Ролей загружено</span><strong>{{ roles|length }}</strong><p>Берутся из сервера</p></div>
   <div class="stat-card"><span>Пользователи</span><strong>{{ stats.tracked_users }}</strong><p>В базе уровней</p></div>
   <div class="stat-card"><span>Сообщения</span><strong>{{ stats.tracked_messages }}</strong><p>Учтено Ranko</p></div>
+  <div class="stat-card"><span>AI модель</span><strong style="font-size:20px">{{ config.ai_model or 'qwen2.5:7b' }}</strong><p>Ollama — локальный LLM</p></div>
+  <div class="stat-card"><span>TTS голос</span><strong style="font-size:14px;margin-top:12px">{{ config.tts_voice or 'DmitryNeural' }}</strong><p>Edge TTS — синтез речи</p></div>
 </section>
 
 <form method="post" class="panel-grid" id="settingsForm">

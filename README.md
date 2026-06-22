@@ -201,14 +201,23 @@ The dashboard (`dashboard.py`) gives server admins a browser-based panel to cont
 - **Discord OAuth** — log in with your Discord account
 - **Password** — use `ADMIN_PASSWORD` as a fallback
 
+**Pages:**
+- **Dashboard** — main settings: prefix, server, welcome, XP, moderation, role rewards
+- **Levels** — full leaderboard with inline level/XP editor
+- **AI & Voice** (`/ai-settings`) — Ollama model, server persona, TTS voice, Whisper toggle
+- **Commands** — full command reference with all categories
+- **API Docs** — built-in REST API documentation
+
 **What you can configure:**
-- Bot prefix, AI model, and server persona
+- Bot prefix, AI model, and server persona prompt
 - XP settings: XP per message, level multiplier, level-up channel
 - Role rewards at specific levels
 - Commander roles, mod roles, and level admin roles
-- Welcome roles for new members
+- Welcome roles and welcome message for new members
 - Log channel for audit events
 - Per-user XP and level overrides
+- TTS voice (Edge TTS), volume multiplier
+- Toggle AI, leveling, moderation, voice recognition modules
 
 ---
 
