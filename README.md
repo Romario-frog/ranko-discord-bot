@@ -2,13 +2,13 @@
 
 # 🌸 Ranko — Discord Bot
 
-**A self-hosted Discord bot with AI chat, music streaming, leveling, TTS, and a web dashboard.**  
+**A self-hosted Discord bot with AI chat, music streaming, leveling, voice recognition, TTS, and a web dashboard.**  
 Powered by [Ollama](https://ollama.com) · Built with [discord.py](https://discordpy.readthedocs.io) · Managed via Flask
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)](https://python.org)
 [![Discord.py](https://img.shields.io/badge/discord.py-2.3%2B-5865F2?logo=discord&logoColor=white)](https://discordpy.readthedocs.io)
 [![Ollama](https://img.shields.io/badge/AI-Ollama-black?logo=ollama)](https://ollama.com)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![Whisper](https://img.shields.io/badge/STT-faster--whisper-orange)](https://github.com/SYSTRAN/faster-whisper)
 
 </div>
 
@@ -19,10 +19,11 @@ Powered by [Ollama](https://ollama.com) · Built with [discord.py](https://disco
 | Category | What Ranko can do |
 |---|---|
 | 🤖 **AI Chat** | Local LLM via Ollama with per-user memory, server personas, and voice responses |
+| 🎙️ **Voice Recognition** | Listens to you in a VC, transcribes with Whisper, and replies via AI + TTS |
+| 🗣️ **TTS** | Edge TTS voice synthesis — Ranko reads text aloud in your voice channel (no character limit) |
 | 🎵 **Music** | YouTube/URL streaming with queue, skip, pause, and interactive embed controls |
-| 🗣️ **TTS** | Edge TTS voice synthesis — Ranko reads text aloud in your voice channel |
 | 📈 **Leveling** | XP per message, level-up announcements, role rewards, and a leaderboard |
-| 🛡️ **Moderation** | Kick, ban, clear, channel lock/unlock with audit logging |
+| 🛡️ **Moderation** | Kick, ban, clear, slowmode, channel lock/unlock with audit logging |
 | 🖥️ **Web Dashboard** | Flask panel to configure every setting — login via Discord OAuth or password |
 | 🎨 **Profile Cards** | Rank cards with custom banner backgrounds and XP stats |
 | 🔔 **Voice Tracking** | Logs when members join and leave voice channels |
@@ -40,7 +41,7 @@ Powered by [Ollama](https://ollama.com) · Built with [discord.py](https://disco
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/Romario-frog/ranko-discord-bot
+git clone https://github.com/Romario-frog/ranko-discord-bot.git
 cd ranko-discord-bot
 pip install -r requirements.txt
 ```
@@ -63,7 +64,6 @@ API_KEY=your_internal_api_key
 
 # TTS (optional — these are the defaults)
 RANKO_TTS_VOICE=ru-RU-DmitryNeural
-RANKO_TTS_MAX_CHARS=250
 RANKO_TTS_VOLUME=3.0
 ```
 
@@ -95,62 +95,101 @@ The dashboard will be available at **http://127.0.0.1:5000** by default.
 
 ---
 
-## 🕹️ Commands
+## 🕹️ Full Command Reference
 
 Ranko supports both the classic prefix `;;` and modern slash commands `/`.
 
+---
+
 ### 🤖 AI
 
-| Prefix | Slash | Description |
-|---|---|---|
-| `;;ai <prompt>` | `/ai <prompt>` | Ask the local AI. Responds in text and voice if you're in a VC |
-| `;;persona [text]` | `/persona [text]` | View or set the server's AI system prompt *(Admin only)* |
-| `;;forget` | `/forget` | Clear your personal AI memory buffer |
-| `;;aimodel [name]` | — | Switch the active Ollama model globally |
+| Command | Slash | Aliases | Description |
+|---|---|---|---|
+| `;;ai <prompt>` | `/ai` | — | Ask the local AI. Responds in text and voice if you're in a VC |
+| `;;persona [text]` | `/persona` | — | View or set the server's AI system prompt *(Admin only)* |
+| `;;forget` | `/forget` | — | Clear your personal AI memory buffer |
+| `;;aimodel [name]` | — | — | Switch the active Ollama model globally *(Admin only)* |
+
+---
+
+### 🎙️ Voice Recognition
+
+| Command | Slash | Aliases | Description |
+|---|---|---|---|
+| `;;listen [seconds]` | `/listen` | `;;слушай` | Ranko records you for N seconds (default 5, max 30), transcribes with Whisper, then answers via AI + TTS |
+
+> On first use, Whisper will automatically download the `small` model (~500 MB).
+
+---
+
+### 🗣️ TTS
+
+| Command | Slash | Aliases | Description |
+|---|---|---|---|
+| `;;sayvc <text>` | `/sayvc` | `;;tts`, `;;speak` | Speak text aloud via TTS in your voice channel |
+| `;;say <text>` | — | — | Make Ranko send a plain text message *(Admin only)* |
+| `;;embed <text>` | — | — | Make Ranko send a formatted embed message *(Admin only)* |
+
+---
 
 ### 🎵 Music
 
-| Prefix | Slash | Description |
-|---|---|---|
-| `;;play <query/url>` | `/play <query/url>` | Stream a track by search or URL |
-| `;;queue` | `/queue` | Show the current playback queue |
-| `;;skip` | `/skip` | Skip to the next track |
-| `;;pause` | `/pause` | Pause playback |
-| `;;resume` | `/resume` | Resume a paused track |
-| `;;stop` | `/stop` | Stop playback and clear the queue |
-| `;;nowplaying` | `/nowplaying` | Show what's currently playing |
-| `;;sayvc <text>` | `/sayvc <text>` | Speak text aloud via TTS in your voice channel |
+| Command | Slash | Aliases | Description |
+|---|---|---|---|
+| `;;play <query/url>` | `/play` | — | Stream a track by search or URL |
+| `;;queue` | `/queue` | `;;q` | Show the current playback queue |
+| `;;skip` | `/skip` | — | Skip to the next track |
+| `;;pause` | `/pause` | — | Pause playback |
+| `;;resume` | `/resume` | — | Resume a paused track |
+| `;;stop` | `/stop` | — | Stop playback and clear the queue |
+| `;;nowplaying` | `/nowplaying` | `;;np` | Show what's currently playing |
+| `;;join` | `/join` | — | Join your voice channel |
+| `;;jointo <channel>` | `/jointo` | `;;moveto`, `;;movevoice` | Move Ranko to a specific voice channel |
+| `;;leave` | `/leave` | — | Leave the voice channel |
+
+---
 
 ### 📊 Leveling & Profiles
 
-| Prefix | Slash | Description |
-|---|---|---|
-| `;;rank [@user]` | `/rank [@user]` | View a user's level, XP, and message count |
-| `;;top` | `/top` | Show the server-wide XP leaderboard |
-| `;;profile [@user]` | `/profile [@user]` | View a detailed profile card with banner |
-| `;;setlevel <@user> <lvl>` | `/setlevel ...` | Manually set a user's level *(Level Admin only)* |
+| Command | Slash | Aliases | Description |
+|---|---|---|---|
+| `;;rank [@user]` | `/rank` | — | View a user's level, XP, and message count |
+| `;;top` | `/top` | — | Show the server-wide XP leaderboard |
+| `;;profile [@user]` | `/profile` | — | View a detailed profile card with banner |
+| `;;setlevel <@user> <lvl>` | `/setlevel` | — | Set a user's level *(Level Admin only)* |
+| `;;addlevel <@user> <n>` | `/addlevel` | — | Add N levels to a user *(Level Admin only)* |
+| `;;setxp <@user> <xp>` | `/setxp` | — | Set a user's XP directly *(Level Admin only)* |
+
+---
 
 ### 🛡️ Moderation
 
-| Prefix | Slash | Description |
-|---|---|---|
-| `;;clear [amount]` | `/clear [amount]` | Delete up to 100 messages |
-| `;;kick <@user> [reason]` | `/kick <@user>` | Remove a member from the server |
-| `;;ban <@user> [reason]` | `/ban <@user>` | Ban a user from the server |
-| `;;lock` | — | Lock all public channels (revoke send permissions) |
-| `;;unlock` | — | Restore send permissions in locked channels |
+| Command | Slash | Aliases | Description |
+|---|---|---|---|
+| `;;clear [amount]` | `/clear` | — | Delete up to 100 messages (default 5) |
+| `;;kick <@user> [reason]` | `/kick` | — | Remove a member from the server *(Commander only)* |
+| `;;ban <@user> [reason]` | `/ban` | — | Ban a user from the server *(Commander only)* |
+| `;;lock` | — | — | Lock all public channels (revoke send permissions) |
+| `;;unlock` | — | — | Restore send permissions in locked channels |
+| `;;slowmode [seconds]` | — | — | Set slowmode delay in the current channel |
+
+---
 
 ### 🔧 Utility
 
-| Prefix | Slash | Description |
-|---|---|---|
-| `;;serverinfo` | `/serverinfo` | Display server information |
-| `;;avatar [@user]` | `/avatar [@user]` | Show a user's avatar |
-| `;;botinfo` | `/botinfo` | Show Ranko's status and info |
-| `;;lastvoice [@user]` | `/lastvoice [@user]` | Check when a user last joined a voice channel |
-| `;;poll <question>` | — | Create a quick 👍/👎 poll |
-| `;;coin` | — | Flip a coin |
-| `;;roll [sides]` | — | Roll a dice (default: 6 sides) |
+| Command | Slash | Aliases | Description |
+|---|---|---|---|
+| `;;serverinfo` | `/serverinfo` | — | Display server information |
+| `;;avatar [@user]` | `/avatar` | — | Show a user's avatar |
+| `;;botinfo` | `/botinfo` | — | Show Ranko's status and info |
+| `;;lastvoice [@user]` | `/lastvoice` | `;;voiceinfo` | Check when a user last joined a voice channel |
+| `;;roles` | — | — | List all roles on the server |
+| `;;myroles [@user]` | — | — | Show roles of a user |
+| `;;poll <question>` | — | — | Create a quick 👍/👎 poll |
+| `;;coin` | — | — | Flip a coin |
+| `;;roll [sides]` | — | — | Roll a dice (default: 6 sides) |
+| `;;ping` | `/ping` | — | Check Ranko's latency |
+| `;;commands` | `/commands` | `;;help` | Show the command list |
 
 ---
 
@@ -159,7 +198,7 @@ Ranko supports both the classic prefix `;;` and modern slash commands `/`.
 The dashboard (`dashboard.py`) gives server admins a browser-based panel to control Ranko without using commands.
 
 **Login options:**
-- **Discord OAuth** — log in with your Discord account (requires `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`)
+- **Discord OAuth** — log in with your Discord account
 - **Password** — use `ADMIN_PASSWORD` as a fallback
 
 **What you can configure:**
@@ -202,7 +241,7 @@ Key settings managed via the dashboard or `config.json`:
 | `xp_per_message` | `10` | XP awarded per message |
 | `level_multiplier` | `100` | XP required per level (`level × multiplier`) |
 | `RANKO_TTS_VOICE` | `ru-RU-DmitryNeural` | Edge TTS voice name |
-| `RANKO_TTS_MAX_CHARS` | `250` | Max characters per TTS request |
+| `RANKO_TTS_VOLUME` | `3.0` | TTS output volume multiplier |
 
 ---
 
@@ -215,5 +254,6 @@ Key settings managed via the dashboard or `config.json`:
 | `ollama` | Local AI inference |
 | `yt-dlp` | Audio extraction for music streaming |
 | `edge-tts` | Text-to-speech synthesis |
+| `faster-whisper` | Local speech-to-text (voice recognition) |
 | `python-dotenv` | Environment variable loading |
 | `PyNaCl` | Voice channel encryption |

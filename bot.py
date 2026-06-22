@@ -8,6 +8,8 @@ from typing import Iterable, List, Optional
 
 import discord
 from discord import app_commands
+from discord.ext import voice_recv
+import wave
 from discord.ext import commands
 from dotenv import load_dotenv
 import yt_dlp
@@ -138,7 +140,6 @@ def update_roles_cache() -> None:
     guilds = [guild_to_cache(guild) for guild in bot.guilds]
     save_roles_cache(guilds)
 
-    # Если бот стоит только на одном сервере, Ranko сам подставит Guild ID для сайта.
     config = load_config()
     if not str(config.get("guild_id", "")).strip() and len(guilds) == 1:
         config["guild_id"] = guilds[0]["id"]
@@ -196,16 +197,12 @@ ai_user_memory: dict[int, list[dict]] = {}
 
 TTS_DIR = Path(__file__).resolve().parent / "generated_tts"
 TTS_DEFAULT_VOICE = os.getenv("RANKO_TTS_VOICE", "ru-RU-DmitryNeural")
-TTS_MAX_CHARS = int(os.getenv("RANKO_TTS_MAX_CHARS", "250"))
 TTS_VOLUME = float(os.getenv("RANKO_TTS_VOLUME", "3.0"))
 TTS_FFMPEG_OPTIONS = {"options": f"-vn -filter:a volume={TTS_VOLUME}"}
 
 
-
 def clean_tts_text(text: str) -> str:
     text = " ".join((text or "").split())
-    if len(text) > TTS_MAX_CHARS:
-        text = text[:TTS_MAX_CHARS].rstrip() + "..."
     return text
 
 
@@ -573,7 +570,6 @@ def find_voice_channel(guild: discord.Guild, query: str) -> discord.VoiceChannel
     if not query:
         return None
 
-    # Mention format: <#123456789>
     match = re.search(r"\d{15,25}", query)
     if match:
         channel = guild.get_channel(int(match.group(0)))
@@ -606,7 +602,7 @@ async def connect_to_voice_channel(ctx: commands.Context, channel: discord.Voice
         if voice and voice.is_connected():
             await voice.move_to(channel)
         else:
-            voice = await channel.connect()
+            voice = await channel.connect(cls=voice_recv.VoiceRecvClient)
     except discord.Forbidden:
         await ctx.send(f"❌ Discord не разрешил зайти в **{channel.name}**. Проверь права канала.")
         return None
@@ -631,7 +627,7 @@ async def connect_to_voice_channel_interaction(interaction: discord.Interaction,
         if voice and voice.is_connected():
             await voice.move_to(channel)
         else:
-            voice = await channel.connect()
+            voice = await channel.connect(cls=voice_recv.VoiceRecvClient)
     except discord.Forbidden:
         await interaction.followup.send(f"❌ Discord не разрешил зайти в **{channel.name}**. Проверь права канала.", ephemeral=True)
         return None
@@ -654,7 +650,7 @@ async def ensure_voice(ctx: commands.Context) -> discord.VoiceClient | None:
         if voice.channel != channel:
             await voice.move_to(channel)
     else:
-        voice = await channel.connect()
+        voice = await channel.connect(cls=voice_recv.VoiceRecvClient)
 
     return voice
 
@@ -673,7 +669,7 @@ async def ensure_voice_interaction(interaction: discord.Interaction) -> discord.
         if voice.channel != channel:
             await voice.move_to(channel)
     else:
-        voice = await channel.connect()
+        voice = await channel.connect(cls=voice_recv.VoiceRecvClient)
 
     return voice
 
@@ -1020,7 +1016,6 @@ async def setxp(ctx: commands.Context, member: discord.Member, xp: int):
     await ctx.send(f"✅ Для {member.mention} установлено XP: **{row['xp']}**.")
 
 
-# Slash-команды — они дают нормальные подсказки в Discord, когда пишешь `/`.
 @bot.tree.command(name="commands", description="Показать команды Ranko")
 async def slash_commands(interaction: discord.Interaction):
     await interaction.response.send_message(embed=commands_embed(load_config().get("prefix", ";;")), ephemeral=True)
@@ -1307,9 +1302,6 @@ async def slash_botinfo(interaction: discord.Interaction):
     embed.add_field(name="Команды", value="Напиши `/commands` или `;;commands`", inline=True)
     await interaction.response.send_message(embed=embed)
 
-
-# ===== Ranko v8 extra commands =====
-
 @bot.command(name="serverinfo")
 async def serverinfo(ctx):
     guild = ctx.guild
@@ -1448,11 +1440,6 @@ async def botinfo(ctx):
     embed.add_field(name="Команды", value="Напиши `/commands` или `;;commands`", inline=True)
     await ctx.send(embed=embed)
 
-
-
-
-# ===== Ranko v12 music + voice activity commands =====
-
 @bot.command(name="join")
 async def join_voice(ctx: commands.Context, *, channel_name: str = None):
     if channel_name:
@@ -1556,6 +1543,211 @@ async def say_voice(ctx: commands.Context, *, text: str):
     await speak_in_voice(ctx, text)
 
 
+class SingleUserSink(voice_recv.AudioSink):
+    def __init__(self, target_id: int):
+        super().__init__()
+        self.target_id = target_id
+        self.buffer = bytearray()
+        self._decoder = None  
+
+    def wants_opus(self) -> bool:
+        return True
+
+    def write(self, user, data):
+        if user and user.id == self.target_id:
+            if data.opus:
+                if self._decoder is None:
+                    self._decoder = discord.opus.Decoder()
+                
+                try:
+                    pcm = self._decoder.decode(data.opus)
+                    self.buffer.extend(pcm)
+                except discord.opus.OpusError:
+                    
+                    pass
+
+    def cleanup(self):
+        pass
+
+async def _transcribe_audio(wav_path: str) -> str:
+    from faster_whisper import WhisperModel
+    loop = asyncio.get_running_loop()
+
+    def _run():
+        model = WhisperModel("small", device="cpu", compute_type="int8")
+        segments, info = model.transcribe(wav_path, beam_size=5)
+        
+        print(f"[Ranko AI] Первая попытка (авто): '{info.language}' (уверенность: {info.language_probability:.2f})")
+        
+        if info.language in ['ru', 'uk']:
+            text = " ".join(seg.text.strip() for seg in segments).strip()
+            if text:
+                return text
+
+        print("[Ranko AI] Автоопределение ошиблось из-за тишины. Включаю принудительный поиск русской речи...")
+        segments, info = model.transcribe(wav_path, beam_size=5, language="ru")
+        return " ".join(seg.text.strip() for seg in segments).strip()
+
+    return await loop.run_in_executor(None, _run)
+
+
+@bot.command(name="listen", aliases=["слушай"])
+async def listen_command(ctx: commands.Context, seconds: int = 5):
+    seconds = max(1, min(seconds, 30))
+
+    if not ctx.author.voice or not ctx.author.voice.channel:
+        await ctx.send("❌ Ты должен быть в голосовом канале.")
+        return
+
+    voice = await get_existing_or_author_voice(ctx)
+    if not voice:
+        return
+
+    msg = await ctx.send(f"🎙️ Слушаю тебя **{seconds}** сек... говори!")
+
+    sink = SingleUserSink(ctx.author.id)
+    voice.listen(sink)
+
+    await asyncio.sleep(seconds)
+    voice.stop_listening()
+    await asyncio.sleep(0.5)
+
+    if not sink.buffer:
+        await msg.edit(content="❌ Ничего не записалось. Убедись, что у тебя включён микрофон.")
+        return
+
+    await msg.edit(content="🔍 Распознаю речь...")
+
+    wav_path = str(TTS_DIR / f"ranko_listen_{ctx.guild.id}_{uuid.uuid4().hex}.wav")
+    TTS_DIR.mkdir(exist_ok=True)
+    try:
+        with wave.open(wav_path, "wb") as f:
+            f.setnchannels(2)      
+            f.setsampwidth(2)      
+            f.setframerate(48000)  
+            f.writeframes(sink.buffer)
+
+        transcript = await _transcribe_audio(wav_path)
+    except Exception as exc:
+        await msg.edit(content=f"❌ Ошибка распознавания: `{exc}`")
+        return
+    finally:
+        try:
+            Path(wav_path).unlink(missing_ok=True)
+        except Exception:
+            pass
+
+    if not transcript:
+        await msg.edit(content="🤔 Не удалось распознать речь. Попробуй говорить громче и чётче.")
+        return
+
+    await msg.edit(content=f"🎙️ Услышал: **{transcript}**\n🤖 *Думаю...*")
+
+    config = load_config()
+    model_name = config.get("ai_model", "qwen3:8b")
+    system_prompt = config.get(f"ai_persona_{ctx.guild.id}", "Ты — полезный голосовой ассистент Ranko.")
+
+    if ctx.author.id not in ai_user_memory:
+        ai_user_memory[ctx.author.id] = []
+
+    messages = [{"role": "system", "content": system_prompt}]
+    messages.extend(ai_user_memory[ctx.author.id][-10:])
+    messages.append({"role": "user", "content": transcript})
+
+    try:
+        async_client = ollama.AsyncClient()
+        response = await async_client.chat(model=model_name, messages=messages)
+        reply = response["message"]["content"]
+
+        ai_user_memory[ctx.author.id].append({"role": "user", "content": transcript})
+        ai_user_memory[ctx.author.id].append({"role": "assistant", "content": reply})
+
+        await msg.edit(content=f"🎙️ Услышал: **{transcript}**\n🤖 **Ответ:** {reply}")
+        await speak_in_voice(ctx, reply)
+
+    except Exception as exc:
+        await msg.edit(content=f"❌ Ошибка Ollama: `{exc}`")
+
+
+@bot.tree.command(name="listen", description="Ranko записывает тебя и отвечает голосом через ИИ")
+@app_commands.describe(seconds="Сколько секунд записывать (1–30, по умолчанию 5)")
+async def slash_listen(interaction: discord.Interaction, seconds: int = 5):
+    seconds = max(1, min(seconds, 30))
+
+    if not interaction.user.voice or not interaction.user.voice.channel:
+        await interaction.response.send_message("❌ Ты должен быть в голосовом канале.", ephemeral=True)
+        return
+
+    await interaction.response.defer()
+    voice = await get_existing_or_author_voice_interaction(interaction)
+    if not voice:
+        return
+
+    msg = await interaction.followup.send(f"🎙️ Слушаю тебя **{seconds}** сек... говори!")
+
+    sink = SingleUserSink(interaction.user.id)
+    voice.listen(sink)
+
+    await asyncio.sleep(seconds)
+    voice.stop_listening()
+    await asyncio.sleep(0.5)
+
+    if not sink.buffer:
+        await msg.edit(content="❌ Ничего не записалось.")
+        return
+
+    await msg.edit(content="🔍 Распознаю речь...")
+
+    wav_path = str(TTS_DIR / f"ranko_listen_{interaction.guild.id}_{uuid.uuid4().hex}.wav")
+    TTS_DIR.mkdir(exist_ok=True)
+    try:
+        with wave.open(wav_path, "wb") as f:
+            f.setnchannels(2)
+            f.setsampwidth(2)
+            f.setframerate(48000)
+            f.writeframes(sink.buffer)
+
+        transcript = await _transcribe_audio(wav_path)
+    except Exception as exc:
+        await msg.edit(content=f"❌ Ошибка распознавания: `{exc}`")
+        return
+    finally:
+        try:
+            Path(wav_path).unlink(missing_ok=True)
+        except Exception:
+            pass
+
+    if not transcript:
+        await msg.edit(content="🤔 Не удалось распознать речь.")
+        return
+
+    await msg.edit(content=f"🎙️ Услышал: **{transcript}**\n🤖 *Думаю...*")
+
+    config = load_config()
+    model_name = config.get("ai_model", "qwen3:8b")
+    system_prompt = config.get(f"ai_persona_{interaction.guild.id}", "Ты — полезный голосовой ассистент Ranko.")
+
+    if interaction.user.id not in ai_user_memory:
+        ai_user_memory[interaction.user.id] = []
+
+    messages = [{"role": "system", "content": system_prompt}]
+    messages.extend(ai_user_memory[interaction.user.id][-10:])
+    messages.append({"role": "user", "content": transcript})
+
+    try:
+        async_client = ollama.AsyncClient()
+        response = await async_client.chat(model=model_name, messages=messages)
+        reply = response["message"]["content"]
+
+        ai_user_memory[interaction.user.id].append({"role": "user", "content": transcript})
+        ai_user_memory[interaction.user.id].append({"role": "assistant", "content": reply})
+
+        await msg.edit(content=f"🎙️ Услышал: **{transcript}**\n🤖 **Ответ:** {reply}")
+        await speak_in_voice_interaction(interaction, reply)
+
+    except Exception as exc:
+        await msg.edit(content=f"❌ Ошибка Ollama: `{exc}`")
+
 @bot.command(name="lastvoice", aliases=["voiceinfo"])
 async def last_voice(ctx: commands.Context, member: discord.Member = None):
     member = member or ctx.author
@@ -1657,11 +1849,6 @@ async def aimodel_command(ctx: commands.Context, name: str = None):
     config["ai_model"] = name
     save_config(config)
     await ctx.send(f"✅ Модель успешно изменена на `{name}`. Убедись, что она скачана через `ollama pull {name}`.")
-
-
-# ====================================================================
-# ===== OLLAMA AI SYSTEM (SLASH COMMANDS) =====
-# ====================================================================
 
 @bot.tree.command(name="ai", description="Задать вопрос локальному ИИ Ranko")
 @app_commands.describe(prompt="Твой вопрос или реплика для ИИ")
