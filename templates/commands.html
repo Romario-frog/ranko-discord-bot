@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% set active = 'commands' %}
+{% set title = 'Ranko — Команды' %}
+{% block content %}
+<header class="hero compact"><div><div class="eyebrow">Commands</div><h1>Команды Ranko</h1><p>Префикс: <b>{{ config.prefix }}</b>. Для выпадающих подсказок Discord пиши <b>/</b> и выбирай команды Ranko.</p></div></header>
+<section class="card">
+  <h2>Slash-подсказки</h2>
+  <p class="muted">Префиксные команды типа {{ config.prefix }}ping не показываются в выпадающем меню Discord. Поэтому добавлены slash-команды.</p>
+  <div class="command-row big"><code>/commands</code><span>Показать меню команд</span></div>
+  <div class="command-row big"><code>/rank</code><span>Показать уровень</span></div>
+  <div class="command-row big"><code>/top</code><span>Топ сервера</span></div>
+  <div class="command-row big"><code>/setlevel</code><span>Изменить уровень пользователя</span></div>
+  <div class="command-row big"><code>/kick</code><span>Кикнуть пользователя, только командеры/серверный админ</span></div>
+  <div class="command-row big"><code>/ban</code><span>Забанить пользователя, только командеры/серверный админ</span></div>
+  <div class="command-row big"><code>/join channel</code><span>Зайти в твой или выбранный голосовой канал</span></div>
+  <div class="command-row big"><code>/jointo</code><span>Переместить Ranko в выбранный голосовой канал</span></div>
+  <div class="command-row big"><code>/play</code><span>Добавить трек в очередь</span></div>
+  <div class="command-row big"><code>/queue</code><span>Показать очередь треков</span></div>
+  <div class="command-row big"><code>/skip</code><span>Пропустить текущий трек</span></div>
+  <div class="command-row big"><code>/sayvc</code><span>Озвучить текст в голосовом канале</span></div>
+  <div class="command-row big"><code>/lastvoice</code><span>Последний вход пользователя в голосовой канал</span></div>
+</section>
+<section class="card">
+  <h2>Префиксные команды</h2>
+  <div class="command-row big"><code>{{ config.prefix }}</code><span>Показать список команд, если отправить только префикс</span></div>
+  <div class="command-row big"><code>{{ config.prefix }}help</code><span>Список команд</span></div>
+  <div class="command-row big"><code>{{ config.prefix }}ping</code><span>Проверка работы</span></div>
+  <div class="command-row big"><code>{{ config.prefix }}rank</code><span>Мой уровень</span></div>
+  <div class="command-row big"><code>{{ config.prefix }}rank @user</code><span>Уровень другого пользователя</span></div>
+  <div class="command-row big"><code>{{ config.prefix }}top</code><span>Топ пользователей</span></div>
+  <div class="command-row big"><code>{{ config.prefix }}clear 10</code><span>Удалить сообщения</span></div>
+  <div class="command-row big"><code>{{ config.prefix }}kick @user причина</code><span>Кик, только роль-командер или серверный админ</span></div>
+  <div class="command-row big"><code>{{ config.prefix }}ban @user причина</code><span>Бан, только роль-командер или серверный админ</span></div>
+  <div class="command-row big"><code>{{ config.prefix }}setlevel @user 10</code><span>Поставить уровень</span></div>
+  <div class="command-row big"><code>{{ config.prefix }}addlevel @user 5</code><span>Добавить уровни</span></div>
+  <div class="command-row big"><code>{{ config.prefix }}setxp @user 500</code><span>Поставить XP</span></div>
+  <div class="command-row big"><code>{{ config.prefix }}jointo Музыка</code><span>Зайти или переместиться в выбранный голосовой канал</span></div>
+  <div class="command-row big"><code>{{ config.prefix }}join Музыка</code><span>То же самое: зайти в выбранный канал по названию</span></div>
+  <div class="command-row big"><code>{{ config.prefix }}sayvc Привет всем</code><span>Ranko зайдёт в голосовой и проговорит текст</span></div>
+</section>
+
+<section class="card">
+  <h2>Дополнительные команды</h2>
+  <div class="command-row"><code>{{ config.prefix }}serverinfo</code><span>Информация о сервере</span></div>
+  <div class="command-row"><code>{{ config.prefix }}avatar @user</code><span>Показать аватар</span></div>
+  <div class="command-row"><code>{{ config.prefix }}profile @user</code><span>Профиль, уровень и XP</span></div>
+  <div class="command-row"><code>{{ config.prefix }}say текст</code><span>Сообщение от имени бота, только командеры</span></div>
+  <div class="command-row"><code>{{ config.prefix }}embed "Заголовок" текст</code><span>Красивое embed-сообщение, только командеры</span></div>
+  <div class="command-row"><code>{{ config.prefix }}slowmode 10</code><span>Медленный режим в канале</span></div>
+  <div class="command-row"><code>{{ config.prefix }}lock / {{ config.prefix }}unlock</code><span>Закрыть/открыть канал</span></div>
+  <div class="command-row"><code>{{ config.prefix }}poll вопрос</code><span>Опрос 👍/👎</span></div>
+  <div class="command-row"><code>{{ config.prefix }}coin / {{ config.prefix }}roll 100</code><span>Монетка и кубик</span></div>
+  <div class="command-row"><code>{{ config.prefix }}roles / {{ config.prefix }}myroles</code><span>Роли сервера и роли пользователя</span></div>
+  <div class="command-row"><code>{{ config.prefix }}botinfo</code><span>Информация о Ranko</span></div>
+</section>
+
+
+<section class="card">
+  <h2>Музыка и голос</h2>
+  <div class="command-row"><code>{{ config.prefix }}join / /join</code><span>Зайти в твой голосовой канал</span></div>
+  <div class="command-row"><code>{{ config.prefix }}play &lt;url or search&gt; / /play</code><span>Играть музыку по ссылке или поиску. Нужен FFmpeg.</span></div>
+  <div class="command-row"><code>{{ config.prefix }}pause / {{ config.prefix }}resume / /pause / /resume</code><span>Пауза и продолжение</span></div>
+  <div class="command-row"><code>{{ config.prefix }}stop / /stop</code><span>Остановить музыку</span></div>
+  <div class="command-row"><code>{{ config.prefix }}nowplaying / /nowplaying</code><span>Что сейчас играет</span></div>
+  <div class="command-row"><code>{{ config.prefix }}leave / /leave</code><span>Выйти из голосового канала</span></div>
+  <div class="command-row"><code>{{ config.prefix }}lastvoice @user / /lastvoice</code><span>Когда пользователь последний раз заходил в голосовой канал</span></div>
+</section>
+
+
+<section class="card">
+  <h2>Говорилка и выбранный голосовой</h2>
+  <div class="command-row big"><code>{{ config.prefix }}jointo Музыка</code><span>Сначала отправить Ranko в выбранный голосовой канал</span></div>
+  <div class="command-row big"><code>{{ config.prefix }}sayvc Привет всем</code><span>Если Ranko уже в другом голосовом — он скажет текст там, а не вернётся к тебе</span></div>
+</section>
+
+{% endblock %}

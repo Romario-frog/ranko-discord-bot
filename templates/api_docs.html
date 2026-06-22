@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% set active = 'api' %}
+{% set title = 'Ranko — API' %}
+{% block content %}
+<header class="hero compact"><div><div class="eyebrow">API</div><h1>Ranko API</h1><p>Внутреннее API панели. Для защищённых запросов нужен заголовок X-API-Key.</p></div></header>
+<section class="card api-docs">
+  <h2>Endpoints</h2>
+  <div class="api-line"><b>GET</b><code>/api/health</code><span>Проверка API</span></div>
+  <div class="api-line"><b>GET</b><code>/api/config</code><span>Получить настройки</span></div>
+  <div class="api-line"><b>PUT</b><code>/api/config</code><span>Обновить настройки</span></div>
+  <div class="api-line"><b>GET</b><code>/api/levels</code><span>Получить таблицу уровней</span></div>
+  <div class="api-line"><b>GET</b><code>/api/stats</code><span>Статистика</span></div>
+  <h2>Пример</h2>
+  <pre><code>curl -H "X-API-Key: ranko_api_key_123" http://127.0.0.1:5000/api/stats</code></pre>
+</section>
+{% endblock %}

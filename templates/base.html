@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title or 'Ranko Dashboard' }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="/dashboard">
+      <span class="brand-logo">R</span>
+      <span><b>Ranko</b><small>Discord bot</small></span>
+    </a>
+
+    <div class="server-pill">
+      <div class="server-icon">🎮</div>
+      <div>
+        <b>{{ config.bot_name if config is defined else 'Ranko' }}</b>
+        <small>{% if session.get("discord_user") %}{{ session.discord_user.username }}{% else %}Admin panel{% endif %}</small>
+      </div>
+      <span>⌄</span>
+    </div>
+
+    <nav>
+      <p>ПАНЕЛЬ</p>
+      <a class="nav-link {% if active=='dashboard' %}active{% endif %}" href="/dashboard"><span>⊞</span> Панель управления</a>
+      <a class="nav-link {% if active=='levels' %}active{% endif %}" href="/levels"><span>🏆</span> Таблица лидеров</a>
+      <a class="nav-link {% if active=='commands' %}active{% endif %}" href="/commands"><span>⌘</span> Команды</a>
+      <a class="nav-link {% if active=='api' %}active{% endif %}" href="/api-docs"><span>🔌</span> API</a>
+
+      <p>ОСНОВНЫЕ</p>
+      <a class="nav-link" href="/dashboard#welcome"><span>👋</span> Приветствие</a>
+      <a class="nav-link" href="/dashboard#levels-module"><span>🏅</span> Уровни</a>
+      <a class="nav-link" href="/dashboard#music-module"><span>🎵</span> Музыка</a>
+      <a class="nav-link" href="/dashboard#access"><span>🛡️</span> Модератор</a>
+      <a class="nav-link" href="/dashboard#rewards"><span>🎁</span> Роли за уровни</a>
+
+      <p>USER</p>
+      <a class="nav-link {% if active=='user' %}active{% endif %}" href="/user"><span>🌐</span> Страница юзеров</a>
+      <a class="nav-link logout" href="/logout"><span>🚪</span> Выйти</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="hamburger" type="button" aria-label="Menu">☰</button>
+        <span class="crumb">Ranko Dashboard</span>
+      </div>
+      <div class="topbar-actions">
+        <a class="premium-btn" href="/commands">👑 Команды</a>
+        <span class="bell">🔔</span>
+        <span class="user-chip">{% if session.get("discord_user") %}{{ session.discord_user.username[:1]|upper }}{% else %}R{% endif %}</span>
+      </div>
+    </header>
+
+    <div class="content-wrap">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

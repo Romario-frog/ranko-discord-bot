@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% set active = 'user' %}
+{% set title = 'Ranko — User Panel' %}
+{% block content %}
+<header class="hero public-user-hero">
+  <div>
+    <div class="eyebrow">USER PANEL</div>
+    <h1>Панель пользователя Ranko</h1>
+    <p>Обычные участники могут смотреть команды, свой прогресс, топ сервера и информацию о ролях без доступа к админским настройкам.</p>
+  </div>
+  <div class="hero-actions">
+    <a class="ghost-btn" href="/commands">Команды</a>
+    <a class="ghost-btn" href="/levels">Таблица уровней</a>
+  </div>
+</header>
+
+<section class="stats-grid">
+  <div class="stat-card"><span>Префикс</span><strong>{{ config.prefix }}</strong><p>Например {{ config.prefix }}rank</p></div>
+  <div class="stat-card"><span>Пользователей</span><strong>{{ stats.tracked_users }}</strong><p>Участвуют в рейтинге</p></div>
+  <div class="stat-card"><span>Сообщений</span><strong>{{ stats.tracked_messages }}</strong><p>Учтено Ranko</p></div>
+  <div class="stat-card"><span>Средний уровень</span><strong>{{ stats.average_level }}</strong><p>По базе сервера</p></div>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <div>
+      <h2>Быстрые команды для юзеров</h2>
+      <p>Эти команды безопасны и доступны обычным участникам.</p>
+    </div>
+  </div>
+  <div class="command-row"><code>/rank</code><span>Посмотреть свой уровень</span></div>
+  <div class="command-row"><code>/top</code><span>Топ пользователей</span></div>
+  <div class="command-row"><code>/userinfo</code><span>Информация о пользователе</span></div>
+  <div class="command-row"><code>{{ config.prefix }}profile</code><span>Карточка профиля</span></div>
+  <div class="command-row"><code>{{ config.prefix }}serverinfo</code><span>Информация о сервере</span></div>
+</section>
+
+<section class="card">
+  <h2>Топ пользователей</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Пользователь</th><th>Level</th><th>XP</th><th>Messages</th></tr></thead>
+      <tbody>
+      {% for row in levels %}
+        <tr><td>{{ loop.index }}</td><td><b>{{ row.username }}</b><br><small>{{ row.user_id }}</small></td><td><span class="pill">{{ row.level }}</span></td><td>{{ row.xp }}</td><td>{{ row.messages }}</td></tr>
+      {% else %}
+        <tr><td colspan="5" class="empty">Пока нет данных.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

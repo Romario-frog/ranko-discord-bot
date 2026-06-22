@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ranko — Select server</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-body interactive-auth-bg compact-login">
+  <div class="auth-gradient" aria-hidden="true"></div>
+  <div class="auth-mesh" aria-hidden="true"></div>
+  <img class="pixel-cat-sprite" id="pixelCat" src="{{ url_for('static', filename='assets/pixel-cat-user.png') }}" alt="" aria-hidden="true">
+
+  <main class="login-shell server-select-shell">
+    <section class="login-hero-mini">
+      <div class="brand big auth-brand portal-brand">
+        <span class="brand-logo">R</span>
+        <div>
+          <h1>Выбери сервер</h1>
+          <p>Ranko нашёл серверы, где у тебя есть права управления.</p>
+        </div>
+      </div>
+    </section>
+
+    {% if available_guilds %}
+      <div class="server-list">
+        {% for g in available_guilds %}
+          <a class="server-card" href="/select-server/{{ g.id }}">
+            <div>
+              <b>{{ g.name }}</b>
+              <small>{{ g.id }}</small>
+            </div>
+            <span>Открыть панель →</span>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="login-option">
+        <h2>Нет доступных серверов</h2>
+        <p>Либо Ranko ещё не добавлен на твой сервер, либо у твоего аккаунта нет Manage Server/Admin.</p>
+        <a class="ghost-btn full-btn" href="/">Назад</a>
+      </div>
+    {% endif %}
+
+    {% if installable_guilds %}
+      <section class="login-option install-hint">
+        <h2>Ranko ещё не стоит на некоторых серверах</h2>
+        <p>Добавь Ranko через invite-link, потом вернись и войди снова.</p>
+        <div class="server-list compact">
+          {% for g in installable_guilds %}
+          <div class="server-card muted-card">
+            <div><b>{{ g.name }}</b><small>{{ g.id }}</small></div>
+            <span>Нужна установка</span>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+  </main>
+
+  <script src="{{ url_for('static', filename='auth_cat.js') }}"></script>
+</body>
+</html>

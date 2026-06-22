@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ranko — Login</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-body interactive-auth-bg compact-login">
+  <div class="auth-gradient" aria-hidden="true"></div>
+  <div class="auth-mesh" aria-hidden="true"></div>
+  <div class="orb orb-a"></div>
+  <div class="orb orb-b"></div>
+  <img class="pixel-cat-sprite" id="pixelCat" src="{{ url_for('static', filename='assets/pixel-cat-user.png') }}" alt="" aria-hidden="true">
+
+  <main class="login-shell">
+    <section class="login-hero-mini">
+      <div class="brand big auth-brand portal-brand">
+        <span class="brand-logo">R</span>
+        <div>
+          <h1>Ranko</h1>
+          <p>Discord Bot Dashboard</p>
+        </div>
+      </div>
+      <p>Панель для владельца Ranko и админов серверов, где установлен бот.</p>
+    </section>
+
+    {% if error %}<div class="alert danger portal-error">{{ error }}</div>{% endif %}
+
+    <section class="login-options">
+      <div class="login-option discord-option">
+        <span class="portal-chip user">Server admin</span>
+        <h2>Войти через Discord</h2>
+        <p>Ranko сам найдёт серверы, где ты админ и где установлен бот.</p>
+        {% if oauth_enabled %}
+          <a class="primary-btn full-btn" href="/oauth/login">Continue with Discord</a>
+        {% else %}
+          <button class="ghost-btn full-btn disabled-link" disabled>Discord OAuth не настроен</button>
+          <small>Добавь DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET и redirect URI в .env.</small>
+        {% endif %}
+      </div>
+
+      <div class="login-option owner-option">
+        <span class="portal-chip admin">Bot owner</span>
+        <h2>Владелец бота</h2>
+        <p>Локальный вход через пароль из .env.</p>
+        <form method="post" class="owner-mini-form">
+          <input type="hidden" name="mode" value="admin">
+          <input type="password" name="password" placeholder="ADMIN_PASSWORD">
+          <button class="ghost-btn" type="submit">Войти</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='auth_cat.js') }}"></script>
+</body>
+</html>

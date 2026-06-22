@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% set active = 'levels' %}
+{% set title = 'Ranko — Уровни' %}
+{% block content %}
+<header class="hero compact"><div><div class="eyebrow">Levels</div><h1>Таблица уровней</h1><p>Рейтинг пользователей по активности. Тут же можно менять уровни через сайт.</p></div></header>
+{% if request.args.get('saved') %}<div class="alert success">✅ Уровень/XP обновлены.</div>{% endif %}
+<section class="stats-grid small"><div class="stat-card"><span>Пользователи</span><strong>{{ stats.tracked_users }}</strong></div><div class="stat-card"><span>Сообщения</span><strong>{{ stats.tracked_messages }}</strong></div><div class="stat-card"><span>Средний уровень</span><strong>{{ stats.average_level }}</strong></div></section>
+<section class="card"><div class="table-wrap"><table><thead><tr><th>#</th><th>Пользователь</th><th>Guild ID</th><th>Level</th><th>XP</th><th>Messages</th><th>Изменить</th></tr></thead><tbody>{% for row in levels %}<tr><td>{{ loop.index }}</td><td><b>{{ row.username }}</b><br><small>{{ row.user_id }}</small></td><td>{{ row.guild_id }}</td><td><span class="pill">{{ row.level }}</span></td><td>{{ row.xp }}</td><td>{{ row.messages }}</td><td><form class="inline-form better-inline" method="post" action="/levels/update"><input type="hidden" name="guild_id" value="{{ row.guild_id }}"><input type="hidden" name="user_id" value="{{ row.user_id }}"><input type="hidden" name="username" value="{{ row.username }}"><select name="action"><option value="setlevel">Set level</option><option value="addlevel">Add level</option><option value="setxp">Set XP</option></select><input type="number" name="value" value="{{ row.level }}"><button class="small-btn primary-soft" type="submit">Применить</button></form></td></tr>{% else %}<tr><td colspan="7" class="empty">Пока нет данных. Напиши пару сообщений на сервере и проверь позже.</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="card">
+  <h2>Команды для уровней</h2>
+  <div class="command-row"><code>{{ config.prefix }}setlevel @user 10</code><span>Поставить уровень</span></div>
+  <div class="command-row"><code>{{ config.prefix }}addlevel @user 5</code><span>Добавить уровни</span></div>
+  <div class="command-row"><code>{{ config.prefix }}setxp @user 500</code><span>Поставить XP</span></div>
+</section>
+{% endblock %}

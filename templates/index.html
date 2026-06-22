@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+{% set active = 'dashboard' %}
+{% set title = 'Ranko — Admin Panel' %}
+{% macro role_checks(name, roles, selected) -%}
+<div class="check-role-grid">
+  {% for role in roles %}
+  <label class="role-check-item">
+    <input type="checkbox" name="{{ name }}" value="{{ role.id }}" {% if role.id|string in selected %}checked{% endif %}>
+    <span class="role-check-box"></span>
+    <span class="role-check-text">{{ role.name }}</span>
+  </label>
+  {% else %}
+  <div class="empty-roles">Нет загруженных ролей. Запусти bot.py и обнови страницу.</div>
+  {% endfor %}
+</div>
+{%- endmacro %}
+{% block content %}
+<header class="hero admin-hero mee-hero">
+  <div>
+    <div class="eyebrow">RANKO CONTROL CENTER</div>
+    <h1>Универсальный бот для Discord</h1>
+    <p>Настрой уровни, приветствия, модерацию, музыку и роли за активность в одном стиле — как у крупных Discord-ботов, но под твой Ranko.</p>
+    <div class="hero-actions">
+      <a class="primary-btn" href="/commands">Посмотреть команды</a>
+      <a class="ghost-btn" href="/user">User-page</a>
+    </div>
+  </div>
+  <div class="hero-art">
+    <div class="moon-card">🌙</div>
+    <img src="{{ url_for('static', filename='assets/pixel-cat-transparent.png') }}" alt="" class="hero-cat">
+    <div class="hero-bubble one">XP</div>
+    <div class="hero-bubble two">🎵</div>
+  </div>
+</header>
+
+{% if saved %}<div class="alert success">✅ Настройки сохранены.</div>{% endif %}
+{% if not discord_connected %}<div class="alert danger">⚠️ DISCORD_TOKEN не найден в .env, сайт не сможет загрузить роли через Discord API.</div>{% endif %}
+{% if not cached_guilds and not roles %}<div class="alert warning">⚠️ Роли пустые. Запусти <b>python bot.py</b>, убедись что Ranko онлайн на сервере, потом обнови страницу.</div>{% endif %}
+{% if config.guild_id and not roles %}<div class="alert danger">⚠️ Для выбранного сервера роли не загрузились. Проверь Guild ID и что Ranko уже на сервере.</div>{% endif %}
+
+<section class="promo-banner">
+  <div>
+    <b>Ranko modules</b>
+    <span>Быстрый обзор включённых возможностей</span>
+  </div>
+  <div class="timer-chip">Panel online</div>
+</section>
+
+<section class="plugins-block">
+  <div class="section-head">
+    <div>
+      <h2>Плагины</h2>
+      <p>Включай и настраивай нужные модули Ranko.</p>
+    </div>
+    <div class="tabs">
+      <span class="active">Все плагины</span>
+      <span>Основные</span>
+      <span>Утилиты</span>
+      <span>Музыка</span>
+    </div>
+  </div>
+
+  <div class="plugin-grid">
+    <article class="plugin-card">
+      <div class="plugin-icon">👋</div>
+      <span class="plugin-badge {% if config.welcome_enabled %}active{% endif %}">{% if config.welcome_enabled %}Активен{% else %}Выключен{% endif %}</span>
+      <h3>Приветствие</h3>
+      <p>Автоматически отправляет welcome-сообщение и выдаёт роль новым участникам.</p>
+      <a class="module-btn" href="#welcome">{% if config.welcome_enabled %}✓ Активен{% else %}+ Включить{% endif %}</a>
+    </article>
+
+    <article class="plugin-card" id="levels-module">
+      <div class="plugin-icon">🏆</div>
+      <span class="plugin-badge {% if config.levels_enabled %}active{% endif %}">{% if config.levels_enabled %}Активен{% else %}Выключен{% endif %}</span>
+      <h3>Уровни</h3>
+      <p>XP за сообщения, ранги, таблица лидеров и автоматические награды ролями.</p>
+      <a class="module-btn" href="#rewards">{% if config.levels_enabled %}✓ Активен{% else %}+ Включить{% endif %}</a>
+    </article>
+
+    <article class="plugin-card" id="music-module">
+      <div class="plugin-icon">🎵</div>
+      <span class="plugin-badge new">Новое</span>
+      <h3>Музыка</h3>
+      <p>Очередь треков, кнопки ⏸️ ▶️ ⏭️ ⏹️ 📜, nowplaying и говорилка TTS в голосовом.</p>
+      <a class="module-btn" href="/commands">Открыть команды</a>
+    </article>
+
+    <article class="plugin-card">
+      <div class="plugin-icon">🛡️</div>
+      <span class="plugin-badge {% if config.moderation_enabled %}active{% endif %}">{% if config.moderation_enabled %}Активен{% else %}Выключен{% endif %}</span>
+      <h3>Модератор</h3>
+      <p>clear, kick, ban, роли-командеры и логика доступа через права сервера.</p>
+      <a class="module-btn" href="#access">{% if config.moderation_enabled %}✓ Активен{% else %}+ Включить{% endif %}</a>
+    </article>
+
+    <article class="plugin-card">
+      <div class="plugin-icon">🎁</div>
+      <span class="plugin-badge">Настройка</span>
+      <h3>Роли за уровни</h3>
+      <p>Выдача ролей за достижение нужного уровня активности на сервере.</p>
+      <a class="module-btn" href="#rewards">Настроить</a>
+    </article>
+
+    <article class="plugin-card">
+      <div class="plugin-icon">📊</div>
+      <span class="plugin-badge">Статистика</span>
+      <h3>Лидерборд</h3>
+      <p>Топ пользователей, XP, сообщения и ручное управление уровнем через сайт.</p>
+      <a class="module-btn" href="/levels">Открыть</a>
+    </article>
+  </div>
+</section>
+
+<section class="stats-grid">
+  <div class="stat-card"><span>Префикс</span><strong>{{ config.prefix }}</strong><p>{{ config.prefix }}ping / slash-команды через /</p></div>
+  <div class="stat-card"><span>Ролей загружено</span><strong>{{ roles|length }}</strong><p>Берутся из сервера</p></div>
+  <div class="stat-card"><span>Пользователи</span><strong>{{ stats.tracked_users }}</strong><p>В базе уровней</p></div>
+  <div class="stat-card"><span>Сообщения</span><strong>{{ stats.tracked_messages }}</strong><p>Учтено Ranko</p></div>
+</section>
+
+<form method="post" class="panel-grid" id="settingsForm">
+  <section class="card wide">
+    <div class="card-head"><div><h2>Основные настройки</h2><p>Сервер, префикс, каналы и внешний вид работы бота.</p></div></div>
+    <div class="form-grid">
+      <label>Название бота<input name="bot_name" value="{{ config.bot_name }}"></label>
+      <label>Префикс команд<input name="prefix" value="{{ config.prefix }}" placeholder=";;"></label>
+      <label>Сервер
+        {% if cached_guilds %}
+        <select name="guild_id">
+          <option value="">Выбери сервер</option>
+          {% for g in cached_guilds %}<option value="{{ g.id }}" {% if config.guild_id|string==g.id|string %}selected{% endif %}>{{ g.name }} — {{ g.id }}</option>{% endfor %}
+        </select>
+        <small>Если пусто — перезапусти бота.</small>
+        {% else %}
+        <input name="guild_id" value="{{ config.guild_id }}" placeholder="Guild ID сервера">
+        <small>ПКМ по серверу Discord → Копировать ID. Нужен режим разработчика.</small>
+        {% endif %}
+      </label>
+      <label id="welcome">Welcome-канал
+        {% if channels %}
+        <select name="welcome_channel">
+          {% for ch in channels %}<option value="{{ ch.name }}" {% if config.welcome_channel==ch.name %}selected{% endif %}>#{{ ch.name }}</option>{% endfor %}
+        </select>
+        {% else %}<input name="welcome_channel" value="{{ config.welcome_channel }}" placeholder="general">{% endif %}
+      </label>
+      <label>Log-канал
+        {% if channels %}
+        <select name="log_channel">
+          {% for ch in channels %}<option value="{{ ch.name }}" {% if config.log_channel==ch.name %}selected{% endif %}>#{{ ch.name }}</option>{% endfor %}
+        </select>
+        {% else %}<input name="log_channel" value="{{ config.log_channel }}" placeholder="logs">{% endif %}
+      </label>
+      <label>Welcome-роль
+        <select name="welcome_role_id">
+          <option value="">Не выдавать роль</option>
+          {% for role in roles %}<option value="{{ role.id }}" {% if config.welcome_role_id|string==role.id|string %}selected{% endif %}>{{ role.name }}</option>{% endfor %}
+        </select>
+        <small>Эта роль будет выдаваться новому участнику при входе.</small>
+      </label>
+    </div>
+    <label class="full">Текст приветствия<textarea name="welcome_text" placeholder="Добро пожаловать, {user}!">{{ config.welcome_text }}</textarea><small>Пиши <b>{user}</b>, чтобы упомянуть нового участника.</small></label>
+  </section>
+
+  <section class="card">
+    <h2>XP и уровни</h2>
+    <p class="muted">Формула нового уровня: текущий уровень × множитель.</p>
+    <label>XP за сообщение<input type="number" name="xp_per_message" min="1" value="{{ config.xp_per_message }}"></label>
+    <label>Множитель уровня<input type="number" name="level_multiplier" min="10" value="{{ config.level_multiplier }}"></label>
+    <div class="preview-box"><span>Пример:</span><b>2 уровень нужен после {{ 2 * config.level_multiplier }} XP</b></div>
+    <div class="level-preview-grid">
+      <div><span>10 lvl</span><b>{{ 10 * config.level_multiplier }} XP</b></div>
+      <div><span>50 lvl</span><b>{{ 50 * config.level_multiplier }} XP</b></div>
+      <div><span>100 lvl</span><b>{{ 100 * config.level_multiplier }} XP</b></div>
+    </div>
+    <div class="mini-tool">
+      <h3>Быстрые пресеты</h3>
+      <button type="button" class="preset-btn" data-xp="5" data-mult="80">Лёгкая прокачка</button>
+      <button type="button" class="preset-btn" data-xp="10" data-mult="100">Баланс</button>
+      <button type="button" class="preset-btn" data-xp="3" data-mult="150">Медленная прокачка</button>
+    </div>
+  </section>
+
+  <section class="card" id="access">
+    <h2>Модули и доступ</h2>
+    <label class="toggle"><div><b>Приветствия</b><span>Сообщение и welcome-роль при входе</span></div><input type="checkbox" name="welcome_enabled" {% if config.welcome_enabled %}checked{% endif %}></label>
+    <label class="toggle"><div><b>Уровни</b><span>XP, rank и top</span></div><input type="checkbox" name="levels_enabled" {% if config.levels_enabled %}checked{% endif %}></label>
+    <label class="toggle"><div><b>Модерация</b><span>clear, kick, ban</span></div><input type="checkbox" name="moderation_enabled" {% if config.moderation_enabled %}checked{% endif %}></label>
+
+    <label>Global Admin ID, опционально
+      <textarea name="bot_owner_ids" placeholder="Твой Discord ID">{{ (config.bot_owner_ids or [])|join('
+') }}</textarea>
+      <small>Основная логика: Server Owner / Administrator / Manage Server + выбранные роли. Это поле только для глобального владельца Ranko.</small>
+    </label>
+
+    <div class="permission-block">
+      <h3>Роли-командеры для модерации</h3>
+      <p>Выбери роли, которым разрешены clear/kick/ban/say/embed/slowmode/lock/unlock.</p>
+      {{ role_checks('commander_role_ids', roles, config.commander_role_ids or []) }}
+    </div>
+
+    <div class="permission-block">
+      <h3>Роли, которые могут менять уровни</h3>
+      <p>Выбери роли, которым разрешено менять уровни через {{ config.prefix }}setlevel / {{ config.prefix }}addlevel / {{ config.prefix }}setxp.</p>
+      {{ role_checks('level_admin_role_ids', roles, config.level_admin_role_ids or []) }}
+    </div>
+  </section>
+
+  <section class="card wide" id="rewards">
+    <div class="card-head"><div><h2>Роли за уровни</h2><p>Например: 10 уровень → Member+, 100 уровень → Legend.</p></div></div>
+    <div class="reward-list">
+      {% set rewards = config.role_rewards or [] %}
+      {% for reward in rewards %}
+      <div class="reward-row">
+        <label>Уровень<input type="number" min="1" name="reward_level" value="{{ reward.level }}"></label>
+        <label>Роль
+          <select name="reward_role_id">
+            <option value="">Не выбрано</option>
+            {% for role in roles %}<option value="{{ role.id }}" {% if role.id|string == reward.role_id|string %}selected{% endif %}>{{ role.name }}</option>{% endfor %}
+          </select>
+        </label>
+      </div>
+      {% endfor %}
+      {% for i in range(6) %}
+      <div class="reward-row">
+        <label>Уровень<input type="number" min="1" name="reward_level" placeholder="10 / 100 / 200"></label>
+        <label>Роль
+          <select name="reward_role_id">
+            <option value="">Не выбрано</option>
+            {% for role in roles %}<option value="{{ role.id }}">{{ role.name }}</option>{% endfor %}
+          </select>
+        </label>
+      </div>
+      {% endfor %}
+    </div>
+    <small>Важно: роль Ranko на сервере должна быть выше ролей, которые он выдаёт.</small>
+  </section>
+
+  <section class="card">
+    <h2>Live Preview</h2>
+    <p class="muted">Мини-превью того, как будут выглядеть сообщения Ranko.</p>
+    <div class="discord-preview">
+      <div class="preview-avatar">R</div>
+      <div>
+        <b>Ranko</b>
+        <p>{{ config.welcome_text.replace('{user}', '@NewUser') }}</p>
+      </div>
+    </div>
+    <div class="command-builder">
+      <span>Команда:</span>
+      <code id="commandPreview">{{ config.prefix }}rank</code>
+      <select id="commandPick">
+        <option value="rank">rank</option>
+        <option value="top">top</option>
+        <option value="profile @user">profile @user</option>
+        <option value="serverinfo">serverinfo</option>
+        <option value="clear 10">clear 10</option>
+      </select>
+    </div>
+  </section>
+
+  <section class="card save-card">
+    <h2>Сохранить</h2>
+    <p class="muted">Настройки сохраняются автоматически. Кнопка ниже нужна только как ручной дубль. Большинство настроек Ranko подхватывает без перезапуска.</p>
+    <button class="primary-btn full-btn" type="submit">Сохранить сейчас</button><div class="autosave-status" id="autosaveStatus">Автосохранение включено</div>
+  </section>
+</form>
+
+<section class="card commands-preview">
+  <div class="card-head"><div><h2>Подсказки команд</h2><p>Discord не показывает подсказки для <b>{{ config.prefix }}</b>. Настоящие подсказки работают через <b>/</b>.</p></div><a class="mini-link" href="/commands">Все команды →</a></div>
+  <div class="command-row"><code>/commands</code><span>Список команд с подсказками Discord</span></div>
+  <div class="command-row"><code>{{ config.prefix }}</code><span>Если просто написать префикс, Ranko покажет список команд</span></div>
+  <div class="command-row"><code>{{ config.prefix }}setlevel @user 10</code><span>Изменить уровень, если есть доступ</span></div>
+</section>
+{% endblock %}
+
+
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='autosave.js') }}"></script>
+<script>
+document.querySelectorAll('.preset-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const xp = document.querySelector('input[name="xp_per_message"]');
+    const mult = document.querySelector('input[name="level_multiplier"]');
+    xp.value = btn.dataset.xp;
+    mult.value = btn.dataset.mult;
+    xp.dispatchEvent(new Event('input', {bubbles:true}));
+    mult.dispatchEvent(new Event('input', {bubbles:true}));
+  });
+});
+const pick = document.getElementById('commandPick');
+const out = document.getElementById('commandPreview');
+const prefixInput = document.querySelector('input[name="prefix"]');
+function updateCmd(){ if(pick && out && prefixInput) out.textContent = prefixInput.value + pick.value; }
+if(pick) pick.addEventListener('change', updateCmd);
+if(prefixInput) prefixInput.addEventListener('input', updateCmd);
+</script>
+{% endblock %}
