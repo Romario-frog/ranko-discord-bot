@@ -217,9 +217,3 @@ Key settings managed via the dashboard or `config.json`:
 | `edge-tts` | Text-to-speech synthesis |
 | `python-dotenv` | Environment variable loading |
 | `PyNaCl` | Voice channel encryption |
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** — see [LICENSE](LICENSE) for details.
